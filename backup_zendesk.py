@@ -279,12 +279,17 @@ def download_all_resources(session: requests.Session):
             articles_attachments[article.id] = []
         soup = BeautifulSoup(article.body, "html.parser")
         for img in soup.find_all("img"):
-            attachment_id = int(
-                img["src"].split("article_attachments/")[1].split("/")[0]
-            )
-            response: requests.Response = session.get(
-                f"{ZENDESK_DOMAIN}/api/v2/help_center/articles/{article.id}/attachments/{attachment_id}"
-            )
+            response: requests.Response
+            try:
+                attachment_id = int(
+                    img["src"].split("article_attachments/")[1].split("/")[0]
+                )
+                response: requests.Response = session.get(
+                    f"{ZENDESK_DOMAIN}/api/v2/help_center/articles/{article.id}/attachments/{attachment_id}"
+                )
+            except:
+                logging.warning(f"Non-zendesk attachment found ({img["src"]}), skipping...")
+                continue
             if response.reason != "OK":
                 logging.error(
                     f"Failed to retrieve attachment: {response.status_code} ({response.reason})"
@@ -420,10 +425,15 @@ def save_nice_data_to_disk(backup_path: Path):
             imgs = soup.find_all("img")
             img_urls = [img["src"] for img in imgs]
             for img, img_url in zip(imgs, img_urls):
-                # Find url with `article_attachments` in it, and get the attachment id after it
-                attachment_id = int(
-                    img_url.split("article_attachments/")[1].split("/")[0]
-                )
+                attachment_id: int
+                try:
+                    # Find url with `article_attachments` in it, and get the attachment id after it
+                    attachment_id = int(
+                        img_url.split("article_attachments/")[1].split("/")[0]
+                    )
+                except:
+                    logging.warning(f"Non-zendesk attachment found ({img_url}), skipping...")
+                    continue
                 # Replace the src with the local path
                 attachment_name: str = ""
                 try:
