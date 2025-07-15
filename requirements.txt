@@ -3,4 +3,4 @@ Werkzeug==3.0.6
 requests==2.32.3
 dataclass_wizard==0.22.3
 beautifulsoup4==4.12.3
-markdownify==0.13.1
+markdownify==0.14.1
